@@ -36,7 +36,7 @@ Leveraging their eBird crowdsourcing project, the Cornell Lab of Ornithology gen
 In this paper, we share our experience porting the eBird data pipeline from a physical cluster to the cloud, providing a seamless deployment at a lower cost. Using open source tools and cloud "marketplaces", we managed to divide the operating costs by a factor of 6, saving  hundreds of thousands of dollars.
 \end{abstract}
 
-\section{Introduction}
+\section{Introduction}\label{sec::intro}
 Birds provide unrivalled insight into overall ecosystem health. They occur in almost all environments around the globe and their migratory patterns integrate disparate ecosystems across regional, continental, and hemispheric scales. Migratory birds are vulnerable to a number of environmental threats including habitat conversion and fragmentation, intensification of incompatible agriculture practices, unsuitable water management, water scarcity and drought, and climate change. This makes these populations valuable indicators of global change, but also points to the challenges that these populations face for their survival.
 
 Assessing the health of bird populations -- and through them, the health of ecosystems -- requires a full lifecycle analysis, including breeding, migration, and wintering patterns. Since the lifecycle of many species of birds spans enormous spatial scales, includes many different habitats, and varies widely between years, obtaining the necessary information can be very challenging.
@@ -45,11 +45,11 @@ However, birds are easy to observe and identify, and, importantly, they have bee
 
 In this paper, we report our experience running the eBird STEM analytical pipeline. The pipeline was developed to transform observations from birders into migration maps for thousands of bird species. Initial runs of the pipeline on our local cluster cost hundreds of thousands of dollars. Given shrinking research budgets, this translated into less frequent runs or arbitrary choices about which species to prioritize. In this paper, we describe our "migration" (pun intended) to the clouds, and what we learned doing it.
 
-The rest of the paper is organized as follows. We first present an overview of the eBird project and how crowdsourced data can be used to create migration models. We then give an overview of the eBird data pipeline and the intuition behind the computations it performs. In Section 3, we describe our migration to the cloud. We share some lessons learned in Section 4.
+The rest of the paper is organized as follows. We first present an overview of the eBird project and how crowdsourced data can be used to create migration models. We then give an overview of the eBird data pipeline and the intuition behind the computations it performs. In Section~\ref{sec::migration}, we describe our migration to the cloud. We share some lessons learned in Section~\ref{sec::lessons}.
 
 Results presented in this paper are based our personal experience using the various cloud technologies at our disposal, to the best of our knowledge and abilities. Your mileage may vary.
 
-\section{The eBird Project}
+\section{The eBird Project}\label{sec::ebird}
 eBird, launched in 2002 by the Cornell Lab of Ornithology (CLO), is a citizen science project that uses crowdsourcing techniques to collect bird monitoring data around the globe throughout the year. Using a web interface or mobile app, bird watching enthusiasts or birders follow a simple protocol in which they collect observations of the bird species they see -- checklists -- along with valuable ancillary information about the time, location, search effort, and media recordings, if any. The eBird database contains observation for more than 10,313  bird species. This information is aggregated and curated for both scientific and educational uses.
 
 One key research application of the eBird data is the creation of Spatio-Temporal Exploratory Model (STEM) maps that describe the migration of birds. An example of such a map is presented in Figure~\ref{fig::stem} and clearly showcases the power of eBird data and STEM for year-round, hemisphere-scale monitoring of migration for all species.
@@ -65,7 +65,7 @@ Models are trained one species at a time. Following model training, the expected
     \label{fig::stem}
 \end{figure}
 
-\section{The STEM analytical Pipeline}
+\section{The STEM analytical Pipeline}\label{sec::pipeline}
 To generate STEM map data for a given species, the Cornell Lab of Ornithology needs to aggregate existing data and predict missing data for that species across a large geographic area for a year-long window. In this section, we provide a high level description of the computations required to build STEM maps. For more technical information, we point the reader to \cite{Fink2010-fb} and \cite{Johnston2015-pf}.
 
 The eBird data currently used in the STEM workflow contains millions of search records for each species in space and time, collected year round and through all over the Western Hemisphere. A species distribution, however, is best explained at a local scale of space and time. This concept of location and time is encapsulated as a stixel, which represents a two-dimensional region for a given time window.
@@ -73,24 +73,26 @@ The eBird data currently used in the STEM workflow contains millions of search r
 The data pipeline processes observations gathered from eBird crowdsourced data to make predictions about the presence (0 or 1) and abundance (counts) of a given species at a given time and a given location. An observation is defined by its timestamp; its location (latitude and longitude); a description of the environment where it was made (e.g. forest, lake, etc.); a description of the way the observation was conducted (e.g. search duration, time of day search conducted, etc.); the name of the species; and the count (i.e. how many individuals of the species were observed on the search).
 
 The computation model has 3 distinct steps as illustrated in Figure~\ref{fig:computational-model}.
-1. We assign observations to a set of stixels (a stixel is represented as a 3D cube).
-2. We train a prediction model. Each stixel gets its own prediction model, independent of all computations happening in other stixels..  
-3. We average predictions across all stixels that contain a given timestamp and location.
+\begin{enumerate}[noitemsep, topsep=-5pt]
+\item We assign observations to a set of stixels (a stixel is represented as a 3D cube).
+\item We train a prediction model. Each stixel gets its own prediction model, independent of all computations happening in other stixels..  
+\item We average predictions across all stixels that contain a given timestamp and location.
+\end{enumerate}
 
 \begin{figure*}
     \includegraphics[width=\textwidth]{IMG/stem-computational-model.png}
     \caption{the STEM computation model.}
-    \label{fig:computational-model}
+    \label{fig::computational-model}
   \end{figure*}
 
 
-This computation model is highly parallel as most of computations occur independently from one another.
+This computation model is highly parallel as most of computations occur independently from one another, as illustrated in Figure~\ref{fig::computational-model}.
 
 To deploy and run this computation, the CLO chose to use Spark, an open-source cluster-computing framework for distributing parallel tasks. The team originally used its own high-performance cluster (HPC) to process the data. The data pipeline consists of a Spark launcher written in Python, which calls into 3 scripts written in the R programming language. 
 
 For the STEM analysis of a typical species,  computation involves training models for over 10,000 stixels and making predictions at over 50 million unique space-time locations, consuming an average of 1,600 core hours.
 
-\section{Migrating to the Cloud}
+\section{Migrating to the Cloud}\label{sec::migration}
 In this section, we describe the various computation deployment we tried. Figure~\ref{fig::cost-comp-1} provides a comparison of the cost for each of them.
 
 \subsection{Running on the high-performance cluster}
@@ -100,9 +102,11 @@ CLO originally ran its workflow on a local HPC system. Based on~\cite{Spagnuolo_
 There are several reasons to migrate to the cloud, as listed in~\cite{noauthor_undated-ne}: flexibility, disaster recovery, automatic software updates, capital expenditure-free, increased collaboration, work from anywhere, document control, security, competitiveness, environmentally friendly.
 
 For CLO, the most relevant reasons were:
-Flexibility to scale up and down computations by renting cores 
-Access to a very competitive infrastructure and related software without having to worry about aging machines
-No need for extra capital investment: you pay what you use.
+\begin{itemize}[noitemsep, topsep=-5pt]
+\item Flexibility to scale up and down computations by renting cores 
+\item Access to a very competitive infrastructure and related software without having to worry about aging machines
+\item No need for extra capital investment: you pay what you use.
+\end{itemize}
 
 The team first moved to the Azure Cloud. Using Azure with Spark support (HDInsight) incurs a cost of \$2.46 per 16 core hours (using D14 instances), costing \$246 at current publically advertised rates. The use of the R Server required an extra fee of \$0.08 per core-hour bringing the final cost to \$374.
 
@@ -163,7 +167,7 @@ We summarize the cost of the various options we tried during our journey in the 
     \label{fig::cost-comp-2}
 \end{figure}
 
-\section{Lessons Learned}
+\section{Lessons Learned}\label{sec::lessons}
 We now distill the lessons we learned and think are worth sharing, based on our journey.
 
 \subsection*{Lesson 1: the cloud is your friend}
@@ -190,7 +194,7 @@ But moving away from R (for a faster high-performance language like Python, Juli
 Early on in the project, we looked at some obvious shortcomings of the current pipeline: (a) use of R instead of a faster language; (b) use of strings to pass data around as opposed to more compact structures such as protocol buffers; (c) computations that carry both training data and to-be-predicted data.
 However, rewriting the pipeline from scratch probably would not have saved 80\% of the computation cost. Similarly, shaving some memory and storage by using more compact encodings would have had very little effect in terms of computation costs, as prices of spot instances  do not vary much based on the size of the instance.
 
-\section{Conclusion}
+\section{Conclusion}\label{sec::conclusion}
 Data is one of the pillars of scientific research. With citizen science and modern technologies such as mobile phones, gathering data has never been easier. Leveraging bird enthusiasts, the eBird project maintains a large dataset of bird observations. But one often forgets that behind a nice bird migration map stands a lot of human work and a complicated data pipeline that is expensive to build and to operate. Very few papers address the cost of producing data and running experiments.
 
 In this paper, we are giving a behind-the-scene view of the eBird data pipeline and our experience migrating the computation from a local cluster to the Cloud. With the Cloud, storage and computation are getting cheaper every day, but they still have cost. Unless you are a large company with infinite resources, operating on a budget means making some trade-offs: reducing the precision of your model, running your model on a subset of the available species.
