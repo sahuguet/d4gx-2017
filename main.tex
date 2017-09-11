@@ -72,7 +72,7 @@ The eBird data currently used in the STEM workflow contains millions of search r
 
 The data pipeline processes observations gathered from eBird crowdsourced data to make predictions about the presence (0 or 1) and abundance (counts) of a given species at a given time and a given location. An observation is defined by its timestamp; its location (latitude and longitude); a description of the environment where it was made (e.g. forest, lake, etc.); a description of the way the observation was conducted (e.g. search duration, time of day search conducted, etc.); the name of the species; and the count (i.e. how many individuals of the species were observed on the search).
 
-The computation model has 3 distinct steps as illustrated in Figure~\ref{fig:computational-model}.
+The computation model has 3 distinct steps as illustrated in Figure~\ref{fig::computational-model}.
 \begin{enumerate}[noitemsep, topsep=-5pt]
 \item We assign observations to a set of stixels (a stixel is represented as a 3D cube).
 \item We train a prediction model. Each stixel gets its own prediction model, independent of all computations happening in other stixels..  
