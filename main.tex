@@ -111,7 +111,7 @@ For CLO, the most relevant reasons were:
 
 The team first moved to the Azure Cloud. Using Azure with Spark support (HDInsight) incurs a cost of \$2.46 per 16 core hours (using D14 instances), costing \$246 at current publically advertised rates. The use of the R Server required an extra fee of \$0.08 per core-hour bringing the final cost to \$374.
 
-The team then explored the Amazon cloud, with AWS dedicated instances (aka on-demand) and Spark support via EMR (Elastic Map Reduce) that manages Hadoop and Spark clusters. Using on-demand instances and EMR, the cost was  \$1.33 per 16 core hours, for a total cost of  \$180 for the same computation.
+The team then explored the Amazon cloud, with AWS dedicated instances (aka on-demand) and Spark support via EMR (Elastic Map Reduce) that manages Hadoop and Spark clusters. Using on-demand instances and EMR, the cost was  \$1.33 per 16 core hours (using r4.4xlarge), for a total cost of  \$180 for the same computation.
 
 \subsection{Using spot instances}
 Cloud offerings presented above assume high-availability, powerful and dedicated machines for the computation. However, because most STEM computations are not time sensitive, some of these features could be traded for a lower cost.
